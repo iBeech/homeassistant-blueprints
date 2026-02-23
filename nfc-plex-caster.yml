@@ -1,0 +1,62 @@
+blueprint:
+  name: NFC Tag - Play Plex Audiobook on Cast Device
+  description: >
+    Scan an NFC tag to cast a specific Plex audiobook to a Google Cast device.
+  domain: automation
+  input:
+    nfc_tag_id:
+      name: NFC Tag ID
+      description: The ID of the NFC tag (found in HA under Settings > NFC Tags)
+      selector:
+        text:
+
+    cast_device:
+      name: Cast Device
+      description: The Google Nest/Cast media player to cast to
+      selector:
+        entity:
+          domain: media_player
+
+    plex_server:
+      name: Plex Server Name
+      description: The name of your Plex server as it appears in HA
+      selector:
+        text:
+
+    library_name:
+      name: Plex Library Name
+      description: The Plex library containing the audiobook
+      selector:
+        text:
+      default: Audiobooks
+
+    audiobook_title:
+      name: Audiobook Title
+      description: The exact title of the audiobook in Plex
+      selector:
+        text:
+
+trigger:
+  - platform: event
+    event_type: tag_scanned
+    event_data:
+      tag_id: !input nfc_tag_id
+
+action:
+  - service: media_player.play_media
+    target:
+      entity_id: !input cast_device
+    data:
+      media_content_type: music
+      media_content_id: >
+        plex://{{ {
+          "library_name": library_name,
+          "title": audiobook_title
+        } | to_json }}
+      extra:
+        plex_server: !input plex_server
+    variables:
+      library_name: !input library_name
+      audiobook_title: !input audiobook_title
+
+mode: single
